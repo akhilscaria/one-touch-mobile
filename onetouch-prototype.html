@@ -189,6 +189,20 @@
     outline:none;
   }
   .field input:focus{border-color:var(--primary);}
+  .field textarea{
+    width:100%;
+    padding:14px;
+    border-radius:var(--radius-sm);
+    border:1.5px solid var(--border);
+    font-size:14px;
+    font-family:inherit;
+    background:var(--card);
+    color:var(--text);
+    outline:none;
+    resize:none;
+    min-height:80px;
+  }
+  .field textarea:focus{border-color:var(--primary);}
 
   .card{
     background:var(--card);
@@ -365,6 +379,20 @@
     cursor:pointer; flex-shrink:0;
   }
   .edit-icon-btn:hover{background:var(--primary); color:#fff;}
+
+  /* address card (Profile > Saved addresses) */
+  .address-card{
+    display:flex; align-items:flex-start; gap:10px;
+    padding:14px;
+    border-radius:var(--radius);
+    border:1.5px solid var(--border);
+    background:var(--card);
+    margin-bottom:10px;
+  }
+  .address-main{flex:1; min-width:0;}
+  .address-label{display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:700; color:var(--text);}
+  .address-label i{color:var(--primary); font-size:13px; width:14px;}
+  .address-text{font-size:12.5px; color:var(--text-secondary); margin-top:6px; line-height:1.4;}
   .add-contact-row{
     display:flex; align-items:center; justify-content:center; gap:10px;
     padding:14px; border-radius:var(--radius-sm);
@@ -558,6 +586,8 @@
       <li data-screen="requests"><i class="fa-solid fa-circle"></i>Requests list</li>
       <li data-screen="profile"><i class="fa-solid fa-circle"></i>Profile</li>
       <li data-screen="editprofile"><i class="fa-solid fa-circle"></i>Edit profile</li>
+      <li data-screen="updatemobile"><i class="fa-solid fa-circle"></i>Update mobile</li>
+      <li data-screen="addressform"><i class="fa-solid fa-circle"></i>Add / edit address</li>
     </ul>
   </div>
 
@@ -588,17 +618,13 @@
             <div class="brand-header">
               <div class="logo-badge"><i class="fa-solid fa-hand-pointer"></i></div>
               <h2>Welcome back</h2>
-              <p>Log in to request and track your services</p>
+              <p>We'll send you a one-time code to log in</p>
             </div>
             <div class="field">
               <label>Mobile number</label>
               <input type="tel" placeholder="+91 98765 43210" value="">
             </div>
-            <div class="field">
-              <label>Password</label>
-              <input type="password" placeholder="••••••••">
-            </div>
-            <button class="btn btn-primary" data-goto="home"><i class="fa-solid fa-arrow-right-to-bracket"></i> Log in</button>
+            <button class="btn btn-primary" id="loginSendOtpBtn"><i class="fa-solid fa-shield-halved"></i> Send OTP</button>
             <p class="link-row">New to OneTouch? <a data-goto="register">Register</a></p>
           </div>
         </section>
@@ -622,7 +648,7 @@
               <label>Email (optional)</label>
               <input type="email" placeholder="you@example.com">
             </div>
-            <button class="btn btn-primary" data-goto="otp"><i class="fa-solid fa-shield-halved"></i> Send OTP</button>
+            <button class="btn btn-primary" id="registerSendOtpBtn"><i class="fa-solid fa-shield-halved"></i> Send OTP</button>
             <p class="link-row">Already have an account? <a data-goto="login">Log in</a></p>
           </div>
         </section>
@@ -630,7 +656,7 @@
         <!-- 4. OTP -->
         <section class="screen" id="screen-otp">
           <div class="top-nav">
-            <div class="back-btn" data-goto="register"><i class="fa-solid fa-arrow-left"></i></div>
+            <div class="back-btn" id="otpBackBtn" data-goto="login"><i class="fa-solid fa-arrow-left"></i></div>
             <span class="title">Verify number</span>
           </div>
           <div class="screen-body">
@@ -642,7 +668,7 @@
             <div class="otp-row">
               <input maxlength="1" value="4"><input maxlength="1" value="8"><input maxlength="1" value="2"><input maxlength="1" value="9">
             </div>
-            <button class="btn btn-primary" data-goto="home" onclick="onVerified()"><i class="fa-solid fa-circle-check"></i> Verify &amp; continue</button>
+            <button class="btn btn-primary" onclick="onVerified()"><i class="fa-solid fa-circle-check"></i> Verify &amp; continue</button>
             <p class="hint">Didn't get a code? <a style="color:var(--primary); font-weight:600; cursor:pointer;">Resend</a></p>
           </div>
         </section>
@@ -656,11 +682,32 @@
             </div>
             <div class="icon-btn" data-goto="profile"><i class="fa-solid fa-user"></i></div>
           </div>
-          <div class="home-hero">
-            <div class="hero-icon"><i class="fa-solid fa-list-check"></i></div>
-            <h1>What do you need today?</h1>
-            <p>Request a service in a couple of taps and we'll take it from there.</p>
-            <button class="btn btn-primary" data-goto="service"><i class="fa-solid fa-plus"></i> Select service</button>
+          <div class="screen-body" style="padding-top:6px;">
+            <div class="home-hero">
+              <div class="hero-icon"><i class="fa-solid fa-list-check"></i></div>
+              <h1>What do you need today?</h1>
+              <p>Request a service in a couple of taps and we'll take it from there.</p>
+              <button class="btn btn-primary" data-goto="service"><i class="fa-solid fa-plus"></i> Select service</button>
+            </div>
+            <div class="section-label">Ongoing services</div>
+            <div id="homeOngoingList">
+              <div class="req-card" data-goto="requests" style="cursor:pointer;">
+                <div class="req-top">
+                  <div class="svc-name"><i class="fa-solid fa-plug"></i>Electrical Repair</div>
+                  <span class="status-pill status-pending">Pending</span>
+                </div>
+                <div class="ref">Ref: OT-24831</div>
+                <div class="date-row"><i class="fa-regular fa-calendar"></i> 9 Sep 2026</div>
+              </div>
+              <div class="req-card" data-goto="requests" style="cursor:pointer;">
+                <div class="req-top">
+                  <div class="svc-name"><i class="fa-solid fa-faucet-drip"></i>Plumbing</div>
+                  <span class="status-pill status-progress">In Progress</span>
+                </div>
+                <div class="ref">Ref: OT-24812</div>
+                <div class="date-row"><i class="fa-regular fa-calendar"></i> 6 Sep 2026</div>
+              </div>
+            </div>
           </div>
           <div class="bottom-tabbar">
             <div class="tab-item active" data-goto="home"><i class="fa-solid fa-house"></i>Home</div>
@@ -772,13 +819,19 @@
                 <div class="addr-sub">Near Kadavanthra Metro Station, Ernakulam, Kerala 682020</div>
               </div>
             </div>
+            <div class="field">
+              <label>User instructions (optional)</label>
+              <textarea id="userInstructions" placeholder="E.g. gate code, landmark, preferred entry, anything the technician should know"></textarea>
+            </div>
             <div class="section-label">Request summary</div>
             <div class="card">
               <div class="summary-row"><span class="label">Service</span><span class="value">Electrical Repair</span></div>
               <div class="summary-row"><span class="label">Contact</span><span class="value">Akhil Scaria</span></div>
               <div class="summary-row"><span class="label">Location</span><span class="value">Kadavanthra, Kochi</span></div>
             </div>
-            <button class="btn btn-primary" style="margin-top:22px;" data-goto="success" onclick="onRequestRaised()"><i class="fa-solid fa-paper-plane"></i> Raise request</button>
+          </div>
+          <div class="fixed-footer">
+            <button class="btn btn-primary" data-goto="success" onclick="onRequestRaised()"><i class="fa-solid fa-paper-plane"></i> Raise request</button>
           </div>
         </section>
 
@@ -872,7 +925,7 @@
             <div class="profile-header">
               <div class="profile-avatar">AS</div>
               <h2>Akhil Scaria</h2>
-              <p>+91 98765 43210</p>
+              <p id="profileMobileDisplay">+91 98765 43210</p>
             </div>
             <div class="section-label">Account</div>
             <div class="card">
@@ -881,14 +934,35 @@
                 <div><div class="info-label">Email</div><div class="info-value">akhil@onetouch.in</div></div>
               </div>
               <div class="info-row">
+                <i class="fa-solid fa-phone"></i>
+                <div style="flex:1;"><div class="info-label">Mobile number</div><div class="info-value" id="accountMobileValue">+91 98765 43210</div></div>
+                <button class="edit-icon-btn" id="updateMobileBtn" type="button"><i class="fa-solid fa-pen"></i></button>
+              </div>
+              <div class="info-row">
                 <i class="fa-solid fa-location-dot"></i>
                 <div><div class="info-label">Default contact</div><div class="info-value">Akhil Scaria — Kadavanthra, Kochi</div></div>
               </div>
-              <div class="info-row">
-                <i class="fa-solid fa-language"></i>
-                <div><div class="info-label">Preferred language</div><div class="info-value">English</div></div>
+            </div>
+
+            <div class="section-label">Saved addresses</div>
+            <div id="addressesList">
+              <div class="address-card" data-label="Home" data-address="Kadavanthra, Kochi, Kerala 682020">
+                <div class="address-main">
+                  <div class="address-label"><i class="fa-solid fa-house"></i><span class="addr-label-text">Home</span></div>
+                  <div class="address-text addr-full-text">Kadavanthra, Kochi, Kerala 682020</div>
+                </div>
+                <button class="edit-icon-btn" data-edit-address type="button"><i class="fa-solid fa-pen"></i></button>
+              </div>
+              <div class="address-card" data-label="Work" data-address="Infopark Phase 1, Kakkanad, Kochi, Kerala 682042">
+                <div class="address-main">
+                  <div class="address-label"><i class="fa-solid fa-building"></i><span class="addr-label-text">Work</span></div>
+                  <div class="address-text addr-full-text">Infopark Phase 1, Kakkanad, Kochi, Kerala 682042</div>
+                </div>
+                <button class="edit-icon-btn" data-edit-address type="button"><i class="fa-solid fa-pen"></i></button>
               </div>
             </div>
+            <div class="add-contact-row" id="addAddressBtn" style="margin-bottom:20px;"><i class="fa-solid fa-plus"></i> Add new address</div>
+
             <div class="section-label">Preferences</div>
             <div class="card">
               <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
@@ -922,21 +996,51 @@
           <div class="screen-body">
             <div class="field">
               <label>Full name</label>
-              <input type="text" value="Akhil Scaria">
-            </div>
-            <div class="field">
-              <label>Mobile number</label>
-              <input type="tel" value="+91 98765 43210">
+              <input type="text" id="epName" value="Akhil Scaria">
             </div>
             <div class="field">
               <label>Email</label>
-              <input type="email" value="akhil@onetouch.in">
+              <input type="email" id="epEmail" value="akhil@onetouch.in">
+            </div>
+            <button class="btn btn-primary" id="saveProfileBtn"><i class="fa-solid fa-check"></i> Save changes</button>
+          </div>
+        </section>
+
+        <!-- 12b. UPDATE MOBILE NUMBER -->
+        <section class="screen" id="screen-updatemobile">
+          <div class="top-nav">
+            <div class="back-btn" data-goto="profile"><i class="fa-solid fa-arrow-left"></i></div>
+            <span class="title">Update mobile number</span>
+          </div>
+          <div class="screen-body">
+            <div class="field">
+              <label>Current mobile number</label>
+              <input type="tel" value="+91 98765 43210" disabled>
             </div>
             <div class="field">
-              <label>Default address</label>
-              <input type="text" value="Kadavanthra, Kochi, Kerala">
+              <label>New mobile number</label>
+              <input type="tel" id="newMobileInput" placeholder="+91 90000 00000">
             </div>
-            <button class="btn btn-primary" data-goto="profile" onclick="onProfileSaved()"><i class="fa-solid fa-check"></i> Save changes</button>
+            <button class="btn btn-primary" id="sendMobileOtpBtn"><i class="fa-solid fa-shield-halved"></i> Send OTP</button>
+          </div>
+        </section>
+
+        <!-- 12c. ADD / EDIT ADDRESS -->
+        <section class="screen" id="screen-addressform">
+          <div class="top-nav">
+            <div class="back-btn" data-goto="profile"><i class="fa-solid fa-arrow-left"></i></div>
+            <span class="title" id="addressFormTitle">Add address</span>
+          </div>
+          <div class="screen-body">
+            <div class="field">
+              <label>Address label</label>
+              <input type="text" id="afLabel" placeholder="e.g. Home, Work">
+            </div>
+            <div class="field">
+              <label>Full address</label>
+              <textarea id="afAddress" placeholder="House/flat, street, area, city, pincode"></textarea>
+            </div>
+            <button class="btn btn-primary" id="saveAddressBtn"><i class="fa-solid fa-check"></i> Save address</button>
           </div>
         </section>
 
@@ -946,7 +1050,7 @@
 </div>
 
 <script>
-  const order = ['splash','login','register','otp','home','service','contact','contactform','location','success','requests','profile','editprofile'];
+  const order = ['splash','login','register','otp','home','service','contact','contactform','location','success','requests','profile','editprofile','updatemobile','addressform'];
 
   function goTo(name){
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -962,6 +1066,21 @@
 
   document.querySelectorAll('.flowlist li').forEach(li => {
     li.addEventListener('click', () => goTo(li.getAttribute('data-screen')));
+  });
+
+  // OTP is used from Login, Register, and Update Mobile — remember where the
+  // back arrow and "Verify" action should go for each context
+  let otpContext = 'login';
+
+  document.getElementById('loginSendOtpBtn').addEventListener('click', () => {
+    otpContext = 'login';
+    document.getElementById('otpBackBtn').setAttribute('data-goto', 'login');
+    goTo('otp');
+  });
+  document.getElementById('registerSendOtpBtn').addEventListener('click', () => {
+    otpContext = 'register';
+    document.getElementById('otpBackBtn').setAttribute('data-goto', 'register');
+    goTo('otp');
   });
 
   // Service selection
@@ -1112,13 +1231,102 @@
   });
 
   function onVerified(){
-    // simulate auto-login after OTP success
+    if(otpContext === 'updatemobile'){
+      const newNumber = document.getElementById('newMobileInput').value.trim() || '+91 90000 00000';
+      document.getElementById('accountMobileValue').textContent = newNumber;
+      document.getElementById('profileMobileDisplay').textContent = newNumber;
+      goTo('profile');
+    } else {
+      goTo('home');
+    }
   }
 
   function onRequestRaised(){
     const ref = 'OT-' + (24800 + Math.floor(Math.random()*900));
     document.getElementById('refChip').textContent = 'Ref: ' + ref;
   }
+
+  document.getElementById('saveProfileBtn').addEventListener('click', () => {
+    const name = document.getElementById('epName').value.trim() || 'Akhil Scaria';
+    const email = document.getElementById('epEmail').value.trim() || 'akhil@onetouch.in';
+    document.querySelector('#screen-profile .profile-header h2').textContent = name;
+    document.querySelector('#screen-profile .info-row .info-value').textContent = email;
+    goTo('profile');
+  });
+
+  // Update mobile number (separate OTP-verified flow)
+  document.getElementById('updateMobileBtn').addEventListener('click', () => goTo('updatemobile'));
+  document.getElementById('sendMobileOtpBtn').addEventListener('click', () => {
+    otpContext = 'updatemobile';
+    document.getElementById('otpBackBtn').setAttribute('data-goto', 'updatemobile');
+    goTo('otp');
+  });
+
+  // Saved addresses: add / edit via a shared form, same delegation pattern as contacts
+  let editingAddressCard = null;
+
+  document.getElementById('addressesList').addEventListener('click', (e) => {
+    const editBtn = e.target.closest('[data-edit-address]');
+    if(editBtn) openAddressForm(editBtn.closest('.address-card'));
+  });
+
+  document.getElementById('addAddressBtn').addEventListener('click', () => openAddressForm(null));
+
+  function openAddressForm(card){
+    editingAddressCard = card;
+    document.getElementById('addressFormTitle').textContent = card ? 'Edit address' : 'Add address';
+    document.getElementById('afLabel').value = card ? card.getAttribute('data-label') : '';
+    document.getElementById('afAddress').value = card ? card.getAttribute('data-address') : '';
+    goTo('addressform');
+  }
+
+  function buildAddressCard(label, address){
+    const card = document.createElement('div');
+    card.className = 'address-card';
+    card.setAttribute('data-label', label);
+    card.setAttribute('data-address', address);
+
+    const main = document.createElement('div');
+    main.className = 'address-main';
+
+    const labelRow = document.createElement('div');
+    labelRow.className = 'address-label';
+    labelRow.innerHTML = '<i class="fa-solid fa-location-dot"></i>';
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'addr-label-text';
+    labelSpan.textContent = label;
+    labelRow.appendChild(labelSpan);
+
+    const addrText = document.createElement('div');
+    addrText.className = 'address-text addr-full-text';
+    addrText.textContent = address;
+
+    main.append(labelRow, addrText);
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'edit-icon-btn';
+    editBtn.setAttribute('data-edit-address', '');
+    editBtn.type = 'button';
+    editBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
+
+    card.append(main, editBtn);
+    return card;
+  }
+
+  document.getElementById('saveAddressBtn').addEventListener('click', () => {
+    const label = document.getElementById('afLabel').value.trim() || 'Address';
+    const address = document.getElementById('afAddress').value.trim() || 'Not provided';
+
+    if(editingAddressCard){
+      editingAddressCard.setAttribute('data-label', label);
+      editingAddressCard.setAttribute('data-address', address);
+      editingAddressCard.querySelector('.addr-label-text').textContent = label;
+      editingAddressCard.querySelector('.addr-full-text').textContent = address;
+    } else {
+      document.getElementById('addressesList').appendChild(buildAddressCard(label, address));
+    }
+    goTo('profile');
+  });
 
   function onProfileSaved(){
     // simulate save toast (kept minimal per brief)
